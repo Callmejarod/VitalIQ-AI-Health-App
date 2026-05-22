@@ -54,7 +54,7 @@ export function HealthRing({
           transform={`rotate(-90 ${size / 2} ${size / 2})`}
         />
       </Svg>
-      <View style={styles.center} pointerEvents="none">
+      <View style={[styles.center, { pointerEvents: "none" }]}>
         <Text style={styles.score} testID="health-ring-score">
           {clamped}
         </Text>
