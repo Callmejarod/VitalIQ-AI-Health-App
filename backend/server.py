@@ -362,6 +362,43 @@ async def import_records(file: UploadFile = File(...)):
 
 
 # ---------- AI INSIGHTS ----------
+def compute_sensor_summary(workouts: List[Dict[str, Any]]) -> Dict[str, Any]:
+    """Aggregate sensor-derived metrics across recent workouts for the AI payload."""
+    if not workouts:
+        return {
+            "workout_count": 0,
+            "total_steps": 0,
+            "total_minutes": 0,
+            "avg_intensity": 0.0,
+            "activity_breakdown_pct": {},
+            "dominant_activity": None,
+        }
+    total_steps = sum(w.get("steps", 0) or 0 for w in workouts)
+    total_seconds = sum(w.get("duration_seconds", 0) or 0 for w in workouts)
+    intensities = [w.get("avg_intensity", 0) or 0 for w in workouts]
+    avg_intensity = sum(intensities) / len(intensities) if intensities else 0.0
+
+    # Sum activity_breakdown counts across all workouts
+    combined: Dict[str, int] = {}
+    for w in workouts:
+        for k, v in (w.get("activity_breakdown") or {}).items():
+            combined[k] = combined.get(k, 0) + int(v or 0)
+    total_samples = sum(combined.values()) or 1
+    breakdown_pct = {
+        k: round((v / total_samples) * 100, 1) for k, v in combined.items()
+    }
+    dominant = max(breakdown_pct.items(), key=lambda kv: kv[1])[0] if breakdown_pct else None
+
+    return {
+        "workout_count": len(workouts),
+        "total_steps": int(total_steps),
+        "total_minutes": int(total_seconds // 60),
+        "avg_intensity": round(avg_intensity, 3),
+        "activity_breakdown_pct": breakdown_pct,
+        "dominant_activity": dominant,
+    }
+
+
 async def gather_snapshot() -> Dict[str, Any]:
     profile = await db.profiles.find_one({"user_id": DEFAULT_USER}, {"_id": 0})
     workouts = (
@@ -394,6 +431,7 @@ async def gather_snapshot() -> Dict[str, Any]:
         .limit(14)
         .to_list(14)
     )
+    sensor_summary = compute_sensor_summary(workouts)
     return {
         "profile": profile,
         "recent_workouts": workouts,
@@ -401,6 +439,7 @@ async def gather_snapshot() -> Dict[str, Any]:
         "medications": meds,
         "nutrition": nutrition,
         "sleep": sleep,
+        "sensor_summary": sensor_summary,
     }
 
 
@@ -471,15 +510,22 @@ async def call_ai(snapshot: Dict[str, Any]) -> Dict[str, Any]:
 
     system_msg = (
         "You are VitalIQ, a clinical-grade health intelligence engine. "
-        "You analyze user biometric, fitness, nutrition, sleep, and medication data "
-        "and return a STRICT JSON object with these keys:\n"
+        "You analyze user biometric, fitness, nutrition, sleep, and medication data — "
+        "including SENSOR-DERIVED telemetry from the device accelerometer and step counter "
+        "(captured during live workouts). Weight sensor data heavily when scoring the "
+        "'activity' category: review sensor_summary.total_steps, total_minutes, avg_intensity "
+        "(0-1+ accelerometer magnitude), activity_breakdown_pct (% time walking/running/"
+        "stationary/mixed) and dominant_activity. Cross-reference with self-reported "
+        "biometrics for cardiovascular and recovery scoring. "
+        "Return a STRICT JSON object with these keys:\n"
         '  overall_score (int 0-100),\n'
         '  category_scores (object with int 0-100 values for: cardiovascular, '
         "activity, nutrition, hydration, medication_adherence, recovery),\n"
         "  suggestions (array of 3-6 objects with: title, detail, priority (1=highest), category),\n"
-        "  trend_summary (string, 1-2 sentences).\n"
+        "  trend_summary (string, 1-2 sentences referencing actual numbers from the data).\n"
         "Return ONLY valid JSON — no markdown, no commentary. "
-        "Be data-driven, specific, and reference actual values when possible."
+        "Be data-driven and specific: cite actual values (e.g. step counts, BP readings, "
+        "intensity averages) in your suggestions whenever possible."
     )
 
     chat = LlmChat(
@@ -537,6 +583,7 @@ async def generate_insights():
             "sleep_log_count": len(snapshot.get("sleep") or []),
             "nutrition_log_count": len(snapshot.get("nutrition") or []),
             "med_log_count": len(snapshot.get("medications") or []),
+            "sensor_summary": snapshot.get("sensor_summary") or {},
         },
     )
     await db.ai_insights.insert_one(record.model_dump())

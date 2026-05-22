@@ -5,6 +5,7 @@ import {
   StyleSheet,
   TouchableOpacity,
   Alert,
+  Modal,
   Platform,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -59,6 +60,13 @@ export default function WorkoutScreen() {
     useState<ActivityType>("stationary");
   const [pedometerAvailable, setPedometerAvailable] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [summary, setSummary] = useState<{
+    duration: number;
+    steps: number;
+    dominant: ActivityType;
+    breakdown: Record<ActivityType, number>;
+    avg_intensity: number;
+  } | null>(null);
 
   const startedAtRef = useRef<Date | null>(null);
   const startStepsRef = useRef<number | null>(null);
@@ -153,6 +161,8 @@ export default function WorkoutScreen() {
     setSaving(true);
     const endedAt = new Date();
     const totalDuration = duration;
+    const finalSteps = steps;
+    const finalIntensity = intensity;
     cleanup();
 
     // dominant activity
@@ -167,14 +177,18 @@ export default function WorkoutScreen() {
         ended_at: endedAt.toISOString(),
         duration_seconds: totalDuration,
         activity_type: dominant,
-        steps,
-        avg_intensity: Number(intensity.toFixed(3)),
+        steps: finalSteps,
+        avg_intensity: Number(finalIntensity.toFixed(3)),
         activity_breakdown: counts,
       });
-      Alert.alert(
-        "Workout saved",
-        `${formatDuration(totalDuration)} · ${steps} steps · ${ACTIVITY_LABEL[dominant]}`,
-      );
+      // Show sensor capture summary modal instead of a plain alert.
+      setSummary({
+        duration: totalDuration,
+        steps: finalSteps,
+        dominant,
+        breakdown: { ...counts },
+        avg_intensity: finalIntensity,
+      });
     } catch (e) {
       console.log("[Workout] save error", e);
       Alert.alert("Save failed", String(e));
@@ -285,7 +299,112 @@ export default function WorkoutScreen() {
           </TouchableOpacity>
         )}
       </View>
+
+      <Modal
+        visible={summary !== null}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setSummary(null)}
+      >
+        <View style={styles.modalBackdrop}>
+          <View style={styles.modalCard} testID="workout-summary-modal">
+            <View style={styles.modalHeader}>
+              <View style={styles.modalIcon}>
+                <Ionicons name="pulse" size={22} color={colors.brand} />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.modalEyebrow}>SENSOR CAPTURE</Text>
+                <Text style={styles.modalTitle}>Workout Saved</Text>
+              </View>
+              <TouchableOpacity
+                onPress={() => setSummary(null)}
+                testID="summary-close-btn"
+              >
+                <Ionicons name="close" size={22} color={colors.textMuted} />
+              </TouchableOpacity>
+            </View>
+
+            {summary && (
+              <>
+                <View style={styles.modalRow}>
+                  <SummaryStat
+                    label="Duration"
+                    value={formatDuration(summary.duration)}
+                  />
+                  <SummaryStat
+                    label="Steps"
+                    value={String(summary.steps)}
+                  />
+                  <SummaryStat
+                    label="Intensity"
+                    value={`${Math.round(summary.avg_intensity * 100)}%`}
+                  />
+                </View>
+
+                <Text style={styles.modalEyebrow2}>
+                  Accelerometer Activity Mix
+                </Text>
+                <View style={{ gap: 6 }}>
+                  {(() => {
+                    const total =
+                      Object.values(summary.breakdown).reduce(
+                        (a, b) => a + b,
+                        0,
+                      ) || 1;
+                    return (Object.keys(ACTIVITY_LABEL) as ActivityType[]).map(
+                      (key) => {
+                        const pct = Math.round(
+                          (summary.breakdown[key] / total) * 100,
+                        );
+                        return (
+                          <View key={key} style={styles.actRow}>
+                            <Text style={styles.actName}>
+                              {ACTIVITY_LABEL[key]}
+                              {key === summary.dominant ? " ★" : ""}
+                            </Text>
+                            <View style={styles.actTrack}>
+                              <View
+                                style={[
+                                  styles.actFill,
+                                  { width: `${pct}%` },
+                                ]}
+                              />
+                            </View>
+                            <Text style={styles.actPct}>{pct}%</Text>
+                          </View>
+                        );
+                      },
+                    );
+                  })()}
+                </View>
+
+                <Text style={styles.modalNote}>
+                  This sensor fingerprint is now part of your AI health
+                  payload — tap Insights → Refresh to recompute scores.
+                </Text>
+
+                <TouchableOpacity
+                  style={styles.modalDone}
+                  onPress={() => setSummary(null)}
+                  testID="summary-done-btn"
+                >
+                  <Text style={styles.modalDoneTxt}>Done</Text>
+                </TouchableOpacity>
+              </>
+            )}
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
+  );
+}
+
+function SummaryStat({ label, value }: { label: string; value: string }) {
+  return (
+    <View style={styles.sumItem}>
+      <Text style={styles.sumValue}>{value}</Text>
+      <Text style={styles.sumLabel}>{label}</Text>
+    </View>
   );
 }
 
@@ -382,5 +501,127 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "800",
     letterSpacing: 1.5,
+  },
+  modalBackdrop: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.55)",
+    justifyContent: "flex-end",
+  },
+  modalCard: {
+    backgroundColor: colors.bg,
+    borderTopLeftRadius: 28,
+    borderTopRightRadius: 28,
+    padding: 24,
+    paddingBottom: 32,
+  },
+  modalHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    marginBottom: 18,
+  },
+  modalIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    backgroundColor: `${colors.brand}18`,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  modalEyebrow: {
+    fontSize: 10,
+    fontWeight: "800",
+    color: colors.accent,
+    letterSpacing: 2,
+  },
+  modalTitle: {
+    fontSize: 22,
+    fontWeight: "800",
+    color: colors.textPrimary,
+    letterSpacing: -0.5,
+    marginTop: 2,
+  },
+  modalEyebrow2: {
+    fontSize: 11,
+    fontWeight: "800",
+    color: colors.textMuted,
+    letterSpacing: 1.5,
+    textTransform: "uppercase",
+    marginTop: 18,
+    marginBottom: 10,
+  },
+  modalRow: { flexDirection: "row", gap: 10 },
+  sumItem: {
+    flex: 1,
+    backgroundColor: colors.card,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: colors.border,
+    padding: 14,
+    alignItems: "center",
+  },
+  sumValue: {
+    fontSize: 18,
+    fontWeight: "800",
+    color: colors.textPrimary,
+    letterSpacing: -0.5,
+  },
+  sumLabel: {
+    fontSize: 10,
+    fontWeight: "700",
+    color: colors.textMuted,
+    letterSpacing: 1,
+    textTransform: "uppercase",
+    marginTop: 4,
+  },
+  actRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+  },
+  actName: {
+    width: 90,
+    fontSize: 12,
+    color: colors.textPrimary,
+    fontWeight: "600",
+  },
+  actTrack: {
+    flex: 1,
+    height: 8,
+    backgroundColor: colors.border,
+    borderRadius: 4,
+    overflow: "hidden",
+  },
+  actFill: {
+    height: "100%",
+    backgroundColor: colors.brand,
+    borderRadius: 4,
+  },
+  actPct: {
+    width: 38,
+    textAlign: "right",
+    fontSize: 11,
+    fontWeight: "700",
+    color: colors.textSecondary,
+  },
+  modalNote: {
+    fontSize: 12,
+    color: colors.textSecondary,
+    lineHeight: 18,
+    marginTop: 18,
+    fontStyle: "italic",
+  },
+  modalDone: {
+    backgroundColor: colors.brand,
+    borderRadius: 999,
+    paddingVertical: 14,
+    alignItems: "center",
+    marginTop: 18,
+  },
+  modalDoneTxt: {
+    color: "#fff",
+    fontWeight: "800",
+    fontSize: 15,
+    letterSpacing: 0.5,
   },
 });

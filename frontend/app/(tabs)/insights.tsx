@@ -150,6 +150,80 @@ export default function InsightsScreen() {
               ) : null}
             </View>
 
+            <Text style={styles.sectionTitle}>Sensor Data Sent to AI</Text>
+            <View style={styles.snapshotCard} testID="snapshot-card">
+              <View style={styles.snapshotRow}>
+                <SnapItem
+                  label="Workouts"
+                  value={String(
+                    insight.snapshot?.sensor_summary?.workout_count ??
+                      insight.snapshot?.workout_count ??
+                      0,
+                  )}
+                />
+                <SnapItem
+                  label="Sensor Steps"
+                  value={String(
+                    insight.snapshot?.sensor_summary?.total_steps ?? 0,
+                  )}
+                />
+                <SnapItem
+                  label="Active Min"
+                  value={String(
+                    insight.snapshot?.sensor_summary?.total_minutes ?? 0,
+                  )}
+                />
+              </View>
+              <View style={[styles.snapshotRow, { marginTop: 12 }]}>
+                <SnapItem
+                  label="Avg Intensity"
+                  value={`${Math.round(
+                    (insight.snapshot?.sensor_summary?.avg_intensity ?? 0) *
+                      100,
+                  )}%`}
+                />
+                <SnapItem
+                  label="Dominant"
+                  value={
+                    insight.snapshot?.sensor_summary?.dominant_activity ||
+                    "—"
+                  }
+                />
+                <SnapItem
+                  label="Manual Logs"
+                  value={String(
+                    (insight.snapshot?.health_entry_count || 0) +
+                      (insight.snapshot?.nutrition_log_count || 0) +
+                      (insight.snapshot?.sleep_log_count || 0) +
+                      (insight.snapshot?.med_log_count || 0),
+                  )}
+                />
+              </View>
+              {insight.snapshot?.sensor_summary?.activity_breakdown_pct &&
+              Object.keys(
+                insight.snapshot.sensor_summary.activity_breakdown_pct,
+              ).length > 0 ? (
+                <View style={styles.breakdownWrap}>
+                  <Text style={styles.snapHint}>
+                    Accelerometer time breakdown
+                  </Text>
+                  {Object.entries(
+                    insight.snapshot.sensor_summary.activity_breakdown_pct,
+                  ).map(([k, v]: [string, any]) => (
+                    <View key={k} style={styles.actRow}>
+                      <Text style={styles.actLabel}>{k}</Text>
+                      <View style={styles.actTrack}>
+                        <View
+                          style={[styles.actFill, { width: `${v}%` }]}
+                        />
+                      </View>
+                      <Text style={styles.actPct}>{v}%</Text>
+                    </View>
+                  ))}
+                </View>
+              ) : null}
+            </View>
+
             <Text style={styles.sectionTitle}>Category Breakdown</Text>
             <View style={styles.catList}>
               {Object.entries(insight.category_scores || {}).map(
@@ -216,6 +290,15 @@ function CategoryBar({ label, score }: { label: string; score: number }) {
           ]}
         />
       </View>
+    </View>
+  );
+}
+
+function SnapItem({ label, value }: { label: string; value: string }) {
+  return (
+    <View style={styles.snapItem}>
+      <Text style={styles.snapValue}>{value}</Text>
+      <Text style={styles.snapLabel}>{label}</Text>
     </View>
   );
 }
@@ -297,6 +380,76 @@ const styles = StyleSheet.create({
     overflow: "hidden",
   },
   catFill: { height: "100%", borderRadius: 5 },
+  snapshotCard: {
+    backgroundColor: colors.card,
+    borderRadius: 24,
+    borderWidth: 1,
+    borderColor: colors.border,
+    padding: 18,
+  },
+  snapshotRow: { flexDirection: "row", gap: 12 },
+  snapItem: {
+    flex: 1,
+    backgroundColor: colors.bgSecondary,
+    borderRadius: 14,
+    padding: 12,
+    alignItems: "center",
+  },
+  snapValue: {
+    fontSize: 18,
+    fontWeight: "800",
+    color: colors.textPrimary,
+    letterSpacing: -0.5,
+    textTransform: "capitalize",
+  },
+  snapLabel: {
+    fontSize: 10,
+    fontWeight: "700",
+    letterSpacing: 1,
+    color: colors.textMuted,
+    textTransform: "uppercase",
+    marginTop: 4,
+  },
+  snapHint: {
+    fontSize: 11,
+    fontWeight: "700",
+    color: colors.textMuted,
+    textTransform: "uppercase",
+    letterSpacing: 1,
+    marginBottom: 8,
+  },
+  breakdownWrap: { marginTop: 16 },
+  actRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    marginBottom: 6,
+  },
+  actLabel: {
+    width: 78,
+    fontSize: 12,
+    color: colors.textPrimary,
+    textTransform: "capitalize",
+  },
+  actTrack: {
+    flex: 1,
+    height: 6,
+    backgroundColor: colors.border,
+    borderRadius: 3,
+    overflow: "hidden",
+  },
+  actFill: {
+    height: "100%",
+    backgroundColor: colors.brand,
+    borderRadius: 3,
+  },
+  actPct: {
+    width: 40,
+    textAlign: "right",
+    fontSize: 11,
+    fontWeight: "700",
+    color: colors.textSecondary,
+  },
   sugCard: {
     flexDirection: "row",
     gap: 14,
