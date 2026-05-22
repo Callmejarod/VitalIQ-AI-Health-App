@@ -107,42 +107,44 @@ export default function WorkoutScreen() {
     breakdownRef.current[act] += 1;
   };
 
-  const start = async () => {
-    try {
-      magSamplesRef.current = [];
-      breakdownRef.current = {
-        stationary: 0,
-        walking: 0,
-        running: 0,
-        mixed: 0,
-      };
-      setSteps(0);
-      setDuration(0);
-      setIntensity(0);
-      startedAtRef.current = new Date();
+  const start = () => {
+    console.log("[Workout] start invoked");
+    // Reset state and start the timer FIRST, so the UI always responds.
+    magSamplesRef.current = [];
+    breakdownRef.current = {
+      stationary: 0,
+      walking: 0,
+      running: 0,
+      mixed: 0,
+    };
+    setSteps(0);
+    setDuration(0);
+    setIntensity(0);
+    startedAtRef.current = new Date();
+    setRunning(true);
 
+    intervalRef.current = setInterval(() => {
+      setDuration((d) => d + 1);
+    }, 1000);
+
+    // Subscribe sensors — non-blocking, each in its own try/catch.
+    try {
       Accelerometer.setUpdateInterval(200);
       accelSubRef.current = Accelerometer.addListener(handleAccel);
+      console.log("[Workout] accelerometer subscribed");
+    } catch (e) {
+      console.log("[Workout] accelerometer subscribe failed", e);
+    }
 
-      if (pedometerAvailable) {
-        // Use watchStepCount for live updates (delta since subscription)
+    if (pedometerAvailable) {
+      try {
         pedSubRef.current = Pedometer.watchStepCount((res) => {
           setSteps(res.steps);
         });
+        console.log("[Workout] pedometer subscribed");
+      } catch (e) {
+        console.log("[Workout] pedometer subscribe failed", e);
       }
-
-      intervalRef.current = setInterval(() => {
-        setDuration((d) => d + 1);
-      }, 1000);
-
-      setRunning(true);
-      console.log("[Workout] started");
-    } catch (e) {
-      console.log("[Workout] start error", e);
-      Alert.alert(
-        "Sensor error",
-        "Could not start workout sensors. " + String(e),
-      );
     }
   };
 
