@@ -86,3 +86,12 @@ android-sdk/
 credentials.json
 *.key
 .credentials
+
+# Kotlin/Android build artifacts
+kotlin/.gradle/
+kotlin/app/build/
+kotlin/build/
+kotlin/.idea/workspace.xml
+kotlin/.idea/deploymentTargetSelector.xml
+*.apk
+*.aab
