@@ -503,10 +503,11 @@ def fallback_score(snapshot: Dict[str, Any]) -> Dict[str, Any]:
 
 
 async def call_ai(snapshot: Dict[str, Any]) -> Dict[str, Any]:
-    if not EMERGENT_LLM_KEY:
-        raise RuntimeError("EMERGENT_LLM_KEY missing")
+    import httpx
 
-    from emergentintegrations.llm.chat import LlmChat, UserMessage
+    api_key = EMERGENT_LLM_KEY or os.environ.get("OPENAI_API_KEY", "")
+    if not api_key:
+        raise RuntimeError("No AI API key configured. Set OPENAI_API_KEY in .env")
 
     system_msg = (
         "You are VitalIQ, a clinical-grade health intelligence engine. "
@@ -528,19 +529,23 @@ async def call_ai(snapshot: Dict[str, Any]) -> Dict[str, Any]:
         "intensity averages) in your suggestions whenever possible."
     )
 
-    chat = LlmChat(
-        api_key=EMERGENT_LLM_KEY,
-        session_id=f"vitaliq-{uuid.uuid4()}",
-        system_message=system_msg,
-    ).with_model("anthropic", "claude-sonnet-4-5-20250929")
-
     user_payload = json.dumps(snapshot, default=str)[:12000]
-    msg = UserMessage(
-        text=f"Analyze the following user data and return the JSON object as specified.\n\nDATA:\n{user_payload}"
-    )
 
-    response = await chat.send_message(msg)
-    text = response if isinstance(response, str) else str(response)
+    async with httpx.AsyncClient(timeout=60) as client:
+        resp = await client.post(
+            "https://api.openai.com/v1/chat/completions",
+            headers={"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"},
+            json={
+                "model": "gpt-4o-mini",
+                "messages": [
+                    {"role": "system", "content": system_msg},
+                    {"role": "user", "content": f"Analyze the following user data and return the JSON object as specified.\n\nDATA:\n{user_payload}"},
+                ],
+                "temperature": 0.3,
+            },
+        )
+        resp.raise_for_status()
+        text = resp.json()["choices"][0]["message"]["content"]
 
     # Try to extract JSON
     text = text.strip()
