@@ -1,0 +1,145 @@
+{
+  "project": "VitalIQ",
+  "platform": "React Native Expo",
+  "theme_and_archetype": {
+    "theme": "light",
+    "archetype": "Archetype 1: Organic & Earthy",
+    "reasoning": "Health and wellness apps require trust, warmth, and calmness. Moving away from clinical blue and AI purple, we use a grounded palette of deep forest greens, warm bone-whites, and terracotta to make biometric data feel natural and human."
+  },
+  "global_styles": {
+    "colors": {
+      "background": {
+        "primary": "#F9F9F6",
+        "secondary": "#F3F3F0",
+        "workout_active": "#1A2F24"
+      },
+      "text": {
+        "primary": "#1C2A21",
+        "secondary": "#6A776F",
+        "inverse": "#FFFFFF",
+        "muted": "#9CA6A0"
+      },
+      "brand": {
+        "primary": "#2C4C3B",
+        "accent": "#D96C50",
+        "accent_soft": "#F2A68D",
+        "success": "#4A7C59",
+        "warning": "#D4A373",
+        "error": "#B0413E"
+      },
+      "surface": {
+        "card": "#FFFFFF",
+        "border": "#E8E8E4",
+        "glass": "rgba(255, 255, 255, 0.8)"
+      }
+    },
+    "typography": {
+      "rules": "Avoid Inter/Roboto. Use Manrope for headings and body, and JetBrains Mono for workout timers and biometric numbers.",
+      "families": {
+        "heading": "Manrope",
+        "body": "Manrope",
+        "mono": "JetBrains Mono"
+      },
+      "scales": {
+        "h1": "text-4xl tracking-tighter font-bold",
+        "h2": "text-3xl tracking-tight font-bold",
+        "h3": "text-2xl tracking-tight font-semibold",
+        "h4": "text-xl font-semibold",
+        "body": "text-base text-[#1C2A21] leading-relaxed",
+        "body_sm": "text-sm text-[#6A776F]",
+        "caption": "text-xs uppercase tracking-wider text-[#9CA6A0]",
+        "timer": "text-6xl font-mono tracking-tighter text-[#FFFFFF]"
+      }
+    },
+    "spacing": {
+      "screen_padding": "px-6",
+      "card_padding": "p-5",
+      "gap_sm": "gap-3",
+      "gap_md": "gap-5",
+      "gap_lg": "gap-8"
+    }
+  },
+  "component_guidelines": {
+    "cards": {
+      "bento_style": "Use NativeWind: bg-white rounded-[24px] border border-[#E8E8E4] shadow-sm. No heavy dropshadows.",
+      "padding": "p-5"
+    },
+    "buttons": {
+      "primary": "bg-[#2C4C3B] rounded-full py-4 px-6 flex-row justify-center items-center",
+      "primary_text": "text-white font-bold text-lg",
+      "secondary": "bg-[#F3F3F0] rounded-full py-4 px-6 flex-row justify-center items-center",
+      "secondary_text": "text-[#1C2A21] font-semibold text-lg"
+    },
+    "navigation": {
+      "tab_bar": "bg-white border-t border-[#E8E8E4] pb-8 pt-4 px-6 flex-row justify-between items-center. Hide standard React Navigation header, build custom headers per screen.",
+      "icons": "lucide-react-native. Active: #2C4C3B, Inactive: #9CA6A0."
+    },
+    "data_visualization": {
+      "health_ring": "react-native-svg. strokeWidth=14. Background track: #E8E8E4. Foreground track: #2C4C3B with rounded caps. Use reanimated for dashoffset.",
+      "charts": "react-native-svg for line/bar charts in History. Soft curves, fillOpacity for areas under lines."
+    },
+    "forms": {
+      "inputs": "bg-[#F9F9F6] border border-[#E8E8E4] rounded-2xl px-5 py-4 text-base",
+      "labels": "text-sm font-semibold text-[#1C2A21] mb-2 uppercase tracking-wide"
+    }
+  },
+  "screen_specifications": {
+    "Dashboard": {
+      "layout": "Scrollable. Top: Greeting + Small Avatar. Center: Large Health Score Ring (0-100) with score text inside. Bottom: 2-column Bento grid of daily summaries (Sleep, HR, Steps).",
+      "actions": "FAB (Floating Action Button) fixed at bottom right for quick-entry shortcuts (weight, BP, meals)."
+    },
+    "ActiveWorkout": {
+      "layout": "Full screen, dark mode variant (bg-[#1A2F24]). Top: Activity classification chip (e.g., Walking with lucide icon). Center: Massive duration timer (JetBrains Mono). Bottom: 2-column stats (Steps, Intensity/BPM) and large circular Start/Stop/Pause buttons.",
+      "animation": "Pulse effect on the timer or heart rate icon using reanimated."
+    },
+    "HealthLog": {
+      "layout": "List of distinct form cards for Weight, Blood Pressure (Sys/Dia), Resting HR, Medications, Nutrition (cals/macros), Water, and Sleep.",
+      "ux": "Use sliders or stepper buttons for numbers to minimize keyboard popups on mobile."
+    },
+    "HistoryAnalytics": {
+      "layout": "Accessible via Dashboard. Tabbed or segmented control at top (Steps, Weight, BP, Activity). Central area shows line/bar charts using react-native-svg.",
+      "styling": "Keep chart lines smooth (bezier). Use #2C4C3B for primary data line."
+    },
+    "AIInsights": {
+      "layout": "Top: Abstract organic background image with generated health score overlaid. Center: Category Radar chart or bar chart (Cardio, Activity, Nutrition, etc.). Bottom: Ranked list of actionable AI suggestions with terracotta accent markers.",
+      "states": "Include a visible Refresh/Recalculate button and an Error/Retry empty state for the AI generation."
+    },
+    "ProfileSetup": {
+      "layout": "Form for Age, Height, Weight, Fitness Goals. Section for Import Health Record (JSON/CSV) with an upload icon."
+    }
+  },
+  "media_assets": {
+    "images": [
+      {
+        "url": "https://static.prod-images.emergentagent.com/jobs/939c5410-aaba-480b-bcc6-6f267640ed88/images/4bba489c58f3718ea9d295065f4ad0605ef8c254a33069a330429fdd73ea4b5c.png",
+        "description": "Abstract organic 3d shapes in sage green and bone-white. Use as header background for AI Insights or Profile.",
+        "category": "abstract_background"
+      },
+      {
+        "url": "https://static.prod-images.emergentagent.com/jobs/939c5410-aaba-480b-bcc6-6f267640ed88/images/328415c32625a1354bb56ad20829eaf002105d00eaef26ae207c7d0b6cc936e0.png",
+        "description": "Macro photography of glowing biometric ring. Use as overlay behind the main Dashboard Health Score Ring or Workout screen.",
+        "category": "biometric_background"
+      },
+      {
+        "url": "https://images.unsplash.com/photo-1744060204728-f68e434a3edf?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NDQ2NDJ8MHwxfHNlYXJjaHwyfHxydW5uZXIlMjBtb3JuaW5nJTIwcGFya3xlbnwwfHx8fDE3Nzk0ODYzNDZ8MA&ixlib=rb-4.1.0&q=85",
+        "description": "A runner sprinting in golden sunlight. Use for workout empty state or goal visualization.",
+        "category": "workout_inspiration"
+      },
+      {
+        "url": "https://images.pexels.com/photos/4929706/pexels-photo-4929706.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940",
+        "description": "Vibrant flat lay of nutritious meal preps. Use for the Nutrition logging section or AI diet suggestions.",
+        "category": "nutrition_inspiration"
+      }
+    ]
+  },
+  "testing_requirements": {
+    "attributes": "CRITICAL: All interactive and key informational elements MUST include a data-testid attribute (mapped as testID property in React Native components). Example: <TouchableOpacity testID=\"workout-start-button\" />."
+  },
+  "tech_stack_rules": [
+    "Use standard .js files for all components. Do NOT use .tsx.",
+    "Use lucide-react-native for all iconography.",
+    "Use react-native-reanimated for micro-interactions and transitions.",
+    "Use react-native-svg for drawing rings and charts.",
+    "Avoid default purple/blue gradients entirely."
+  ]
+}
