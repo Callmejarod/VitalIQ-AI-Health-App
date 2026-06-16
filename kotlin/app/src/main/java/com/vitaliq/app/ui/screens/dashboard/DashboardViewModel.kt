@@ -6,6 +6,7 @@ import com.vitaliq.app.data.api.RetrofitClient
 import com.vitaliq.app.data.model.DashboardSummaryDto
 import com.vitaliq.app.data.model.ProfileDto
 import kotlinx.coroutines.async
+import kotlinx.coroutines.supervisorScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
@@ -30,11 +31,13 @@ class DashboardViewModel : ViewModel() {
         viewModelScope.launch {
             _uiState.value = DashboardUiState.Loading
             try {
-                val summaryDeferred = async { api.dashboardSummary() }
-                val profileDeferred = async { api.getProfile() }
-                val summary = summaryDeferred.await()
-                val profile = profileDeferred.await()
-                _uiState.value = DashboardUiState.Success(summary, profile)
+                supervisorScope {
+                    val summaryDeferred = async { api.dashboardSummary() }
+                    val profileDeferred = async { api.getProfile() }
+                    val summary = summaryDeferred.await()
+                    val profile = profileDeferred.await()
+                    _uiState.value = DashboardUiState.Success(summary, profile)
+                }
             } catch (e: Exception) {
                 _uiState.value = DashboardUiState.Error(e.message ?: "Failed to load dashboard")
             }
