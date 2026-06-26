@@ -5,10 +5,18 @@ import android.hardware.Sensor
 import android.hardware.SensorEvent
 import android.hardware.SensorEventListener
 import android.hardware.SensorManager
+import android.util.Log
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
+import androidx.lifecycle.viewmodel.initializer
+import androidx.lifecycle.viewmodel.viewModelFactory
+import com.vitaliq.app.BuildConfig
 import com.vitaliq.app.data.api.RetrofitClient
+import com.vitaliq.app.data.local.AppDatabase
 import com.vitaliq.app.data.model.WorkoutDto
+import com.vitaliq.app.data.repository.WorkoutRepository
+import com.vitaliq.app.data.repository.WorkoutRepositoryImpl
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -34,9 +42,9 @@ sealed class WorkoutUiState {
     data class Error(val message: String) : WorkoutUiState()
 }
 
-class WorkoutViewModel : ViewModel(), SensorEventListener {
-
-    private val api = RetrofitClient.apiService
+class WorkoutViewModel(
+    private val repo: WorkoutRepository
+) : ViewModel(), SensorEventListener {
 
     private val _uiState = MutableStateFlow<WorkoutUiState>(WorkoutUiState.Idle)
     val uiState: StateFlow<WorkoutUiState> = _uiState
@@ -62,6 +70,10 @@ class WorkoutViewModel : ViewModel(), SensorEventListener {
     private var timerJob: Job? = null
     private var sensorManager: SensorManager? = null
 
+    init {
+        Log.d("VitalIQ", "WorkoutViewModel created")
+    }
+
     fun startWorkout(context: Context) {
         startedAt = DateTimeFormatter.ISO_INSTANT.format(Instant.now())
         elapsedSeconds = 0
@@ -79,11 +91,28 @@ class WorkoutViewModel : ViewModel(), SensorEventListener {
             while (true) {
                 delay(1000L)
                 elapsedSeconds++
+                if (BuildConfig.SIMULATE_SENSORS) simulateTick()
                 emitActiveState()
             }
         }
 
         emitActiveState()
+    }
+
+    // Demo mode: produce a believable workout each second without real sensors.
+    // Cycles walking -> mixed -> running so steps climb and activity varies.
+    private fun simulateTick() {
+        val (type, stepsPerSec, intensity) = when ((elapsedSeconds / 15) % 4) {
+            0 -> Triple("walking", 2, 0.25f)
+            1 -> Triple("mixed", 3, 0.6f)
+            2 -> Triple("running", 4, 1.3f)
+            else -> Triple("walking", 2, 0.3f)
+        }
+        steps += stepsPerSec + (0..1).random()
+        currentActivityType = type
+        activityBreakdown[type] = (activityBreakdown[type] ?: 0) + 1
+        intensitySum += intensity
+        intensityCount++
     }
 
     fun stopWorkout() {
@@ -109,7 +138,7 @@ class WorkoutViewModel : ViewModel(), SensorEventListener {
         viewModelScope.launch {
             _uiState.value = WorkoutUiState.Submitting
             try {
-                val result = api.createWorkout(dto)
+                val result = repo.createWorkout(dto)
                 _uiState.value = WorkoutUiState.Summary(result)
             } catch (e: Exception) {
                 _uiState.value = WorkoutUiState.Error(e.message ?: "Failed to save workout")
@@ -134,6 +163,11 @@ class WorkoutViewModel : ViewModel(), SensorEventListener {
     }
 
     private fun registerSensors(context: Context) {
+        if (BuildConfig.SIMULATE_SENSORS) {
+            stepCounterAvailable = true
+            return
+        }
+
         sensorManager = context.getSystemService(Context.SENSOR_SERVICE) as SensorManager
 
         sensorManager?.getDefaultSensor(Sensor.TYPE_ACCELEROMETER)?.let { sensor ->
@@ -187,5 +221,17 @@ class WorkoutViewModel : ViewModel(), SensorEventListener {
         super.onCleared()
         timerJob?.cancel()
         sensorManager?.unregisterListener(this)
+        Log.d("VitalIQ", "WorkoutViewModel cleared")
+    }
+
+    companion object {
+        fun factory(context: Context): ViewModelProvider.Factory = viewModelFactory {
+            initializer {
+                val db = AppDatabase.getInstance(context)
+                WorkoutViewModel(
+                    WorkoutRepositoryImpl(RetrofitClient.apiService, db.workoutDao())
+                )
+            }
+        }
     }
 }

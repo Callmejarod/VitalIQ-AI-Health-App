@@ -22,6 +22,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.repeatOnLifecycle
+import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.vitaliq.app.ui.components.HealthRing
 import com.vitaliq.app.ui.components.SectionHeader
@@ -31,7 +32,7 @@ import com.vitaliq.app.ui.theme.VitalSpacing
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun InsightsScreen(
-    viewModel: InsightsViewModel = viewModel()
+    viewModel: InsightsViewModel = viewModel(factory = InsightsViewModel.factory(LocalContext.current))
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val lifecycleOwner = LocalLifecycleOwner.current
