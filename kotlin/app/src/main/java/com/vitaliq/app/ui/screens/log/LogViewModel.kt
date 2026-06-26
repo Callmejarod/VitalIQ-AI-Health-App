@@ -130,7 +130,7 @@ class LogViewModel(
             initializer {
                 val db = AppDatabase.getInstance(context)
                 LogViewModel(
-                    HealthRepositoryImpl(RetrofitClient.apiService, db.healthEntryDao())
+                    HealthRepositoryImpl(RetrofitClient.apiService, db.healthEntryDao(), db.medicationDao(), db.nutritionDao(), db.sleepDao())
                 )
             }
         }

@@ -117,7 +117,7 @@ class HistoryViewModel(
                 val db = AppDatabase.getInstance(context)
                 HistoryViewModel(
                     WorkoutRepositoryImpl(RetrofitClient.apiService, db.workoutDao()),
-                    HealthRepositoryImpl(RetrofitClient.apiService, db.healthEntryDao())
+                    HealthRepositoryImpl(RetrofitClient.apiService, db.healthEntryDao(), db.medicationDao(), db.nutritionDao(), db.sleepDao())
                 )
             }
         }
