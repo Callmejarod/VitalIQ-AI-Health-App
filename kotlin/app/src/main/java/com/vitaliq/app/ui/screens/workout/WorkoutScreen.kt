@@ -24,6 +24,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.vitaliq.app.data.model.WorkoutDto
 import com.vitaliq.app.ui.theme.VitalColors
@@ -31,7 +32,7 @@ import com.vitaliq.app.ui.theme.VitalSpacing
 
 @Composable
 fun WorkoutScreen(
-    viewModel: WorkoutViewModel = viewModel()
+    viewModel: WorkoutViewModel = viewModel(factory = WorkoutViewModel.factory(LocalContext.current))
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val context = LocalContext.current

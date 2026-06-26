@@ -26,6 +26,15 @@ android {
             "BACKEND_URL",
             "\"${localProperties.getProperty("BACKEND_URL", "http://10.0.2.2:8000")}\""
         )
+
+        // Demo/presentation mode: synthesize workout steps + activity so a
+        // workout produces realistic data on an emulator (no real step sensor).
+        // Set SIMULATE_SENSORS=false in local.properties for real devices.
+        buildConfigField(
+            "boolean",
+            "SIMULATE_SENSORS",
+            localProperties.getProperty("SIMULATE_SENSORS", "true")
+        )
     }
 
     buildTypes {
@@ -64,5 +73,8 @@ dependencies {
     implementation(libs.retrofit.converter.gson)
     implementation(libs.okhttp)
     implementation(libs.kotlinx.coroutines.android)
+    implementation(libs.androidx.room.runtime)
+    implementation(libs.androidx.room.ktx)
+    annotationProcessor(libs.androidx.room.compiler)
     debugImplementation(libs.androidx.ui.tooling)
 }

@@ -1,8 +1,18 @@
 package com.vitaliq.app.ui.screens.history
 
+import android.content.Context
+import android.util.Log
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
+import androidx.lifecycle.viewmodel.initializer
+import androidx.lifecycle.viewmodel.viewModelFactory
 import com.vitaliq.app.data.api.RetrofitClient
+import com.vitaliq.app.data.local.AppDatabase
+import com.vitaliq.app.data.repository.HealthRepository
+import com.vitaliq.app.data.repository.HealthRepositoryImpl
+import com.vitaliq.app.data.repository.WorkoutRepository
+import com.vitaliq.app.data.repository.WorkoutRepositoryImpl
 import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -22,34 +32,37 @@ sealed class HistoryUiState {
     data class Error(val message: String) : HistoryUiState()
 }
 
-class HistoryViewModel : ViewModel() {
-
-    private val api = RetrofitClient.apiService
+class HistoryViewModel(
+    private val workoutRepo: WorkoutRepository,
+    private val healthRepo: HealthRepository
+) : ViewModel() {
 
     private val _uiState = MutableStateFlow<HistoryUiState>(HistoryUiState.Loading)
     val uiState: StateFlow<HistoryUiState> = _uiState
+
+    init {
+        Log.d("VitalIQ", "HistoryViewModel created")
+    }
 
     fun load() {
         viewModelScope.launch {
             _uiState.value = HistoryUiState.Loading
             try {
-                val workoutsDeferred = async { api.listWorkouts() }
-                val weightDeferred = async { api.listHealthEntries("weight") }
-                val bpDeferred = async { api.listHealthEntries("bp") }
+                val workoutsDeferred = async { workoutRepo.listWorkouts() }
+                val weightDeferred = async { healthRepo.listHealthEntries("weight") }
+                val bpDeferred = async { healthRepo.listHealthEntries("bp") }
 
                 val workouts = workoutsDeferred.await()
                 val weightEntries = weightDeferred.await()
                 val bpEntries = bpDeferred.await()
 
-                // Steps — last 14 workout sessions
                 val steps = workouts
                     .takeLast(14)
                     .mapIndexed { i, w ->
-                        val label = w.startedAt.take(10).substring(5) // MM-DD
+                        val label = w.startedAt.take(10).substring(5)
                         Pair(label, w.steps.toFloat())
                     }
 
-                // Weight — last 14 entries
                 val weight = weightEntries
                     .takeLast(14)
                     .mapNotNull { entry ->
@@ -58,7 +71,6 @@ class HistoryViewModel : ViewModel() {
                         if (kg != null) Pair(label, kg * 2.20462f) else null
                     }
 
-                // BP — last 14 entries, split sys/dia
                 val bpSys = bpEntries
                     .takeLast(14)
                     .mapNotNull { entry ->
@@ -74,7 +86,6 @@ class HistoryViewModel : ViewModel() {
                         if (dia != null) Pair(label, dia) else null
                     }
 
-                // Activity — count occurrences per type
                 val activityCounts = mutableMapOf("stationary" to 0, "walking" to 0, "mixed" to 0, "running" to 0)
                 workouts.forEach { w ->
                     activityCounts[w.activityType] = (activityCounts[w.activityType] ?: 0) + 1
@@ -91,6 +102,23 @@ class HistoryViewModel : ViewModel() {
                 )
             } catch (e: Exception) {
                 _uiState.value = HistoryUiState.Error(e.message ?: "Failed to load history")
+            }
+        }
+    }
+
+    override fun onCleared() {
+        super.onCleared()
+        Log.d("VitalIQ", "HistoryViewModel cleared")
+    }
+
+    companion object {
+        fun factory(context: Context): ViewModelProvider.Factory = viewModelFactory {
+            initializer {
+                val db = AppDatabase.getInstance(context)
+                HistoryViewModel(
+                    WorkoutRepositoryImpl(RetrofitClient.apiService, db.workoutDao()),
+                    HealthRepositoryImpl(RetrofitClient.apiService, db.healthEntryDao())
+                )
             }
         }
     }
