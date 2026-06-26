@@ -291,6 +291,9 @@ code_block(doc,
     "\n"
     "  ServiceLocator (plain-Kotlin composition root) builds ApiService + AppDatabase\n"
     "  once and hands each ViewModel its repository interface. No DI framework.")
+add_image(doc, "arch_layered.png", width=6.5,
+          caption="Figure 3.1 — Layered architecture (as-built): UI → ViewModel → Repository → "
+                  "Room/network, with class names, the Main→IO thread boundary, and dispatcher bands.")
 
 H2(doc, "3.2 UI Layer (Jetpack Compose)")
 P(doc, "Six Composable screens — Dashboard, Workout, Log, Insights, History, Profile — render "

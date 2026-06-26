@@ -298,4 +298,96 @@ def state_machine(name):
 
 
 state_machine("state_workout.png")
+
+
+# ---------------------------------------------------------------------------
+# LAYERED ARCHITECTURE DIAGRAM (as-built) — UI / ViewModel / Repository /
+# Data sources, with class names and Main vs IO thread boundaries.
+# ---------------------------------------------------------------------------
+def layered_architecture(name):
+    fig, ax = plt.subplots(figsize=(11.8, 9.6))
+    ax.set_xlim(0, 14); ax.set_ylim(0, 16); ax.axis("off")
+    ax.text(5.7, 15.5, "Layered Architecture — VitalIQ (As-Built)",
+            ha="center", fontsize=13, weight="bold", color=NAVY)
+
+    # Thread bands (right edge labels). MAIN covers UI + ViewModel + composition
+    # root; IO covers the Repository internals + both data sources.
+    ax.add_patch(Rectangle((0.2, 9.95), 11.0, 5.05, fc="#EAF2F8", ec="none", alpha=0.5))
+    ax.add_patch(Rectangle((0.2, 0.5), 11.0, 8.95, fc="#FBF4E8", ec="none", alpha=0.5))
+    ax.text(11.55, 12.4, "MAIN THREAD", rotation=90, va="center", ha="center",
+            fontsize=9.5, weight="bold", color=BLUE)
+    ax.text(12.1, 12.4, "UI render + ViewModel state\n(viewModelScope on Main)",
+            rotation=90, va="center", ha="center", fontsize=6.8, color=BLUE)
+    ax.text(11.55, 4.8, "IO DISPATCHER", rotation=90, va="center", ha="center",
+            fontsize=9.5, weight="bold", color=AMBER)
+    ax.text(12.1, 4.8, "Repository network + Room disk IO\n(Sensor classify: Default-eligible)",
+            rotation=90, va="center", ha="center", fontsize=6.8, color=AMBER)
+
+    # ---- Layer 1: UI ----
+    ax.text(0.45, 14.62, "UI LAYER — Jetpack Compose", fontsize=10.5, weight="bold", color=BLUE)
+    ui = ["DashboardScreen", "WorkoutScreen", "LogScreen",
+          "InsightsScreen", "ProfileScreen", "HistoryScreen"]
+    for i, s in enumerate(ui):
+        box(ax, 0.45 + i * 1.74, 13.75, 1.62, 0.62, s, fc=LIGHT, ec=BLUE, fs=6.6)
+    ax.text(0.45, 13.45, "observe state via collectAsStateWithLifecycle();  delegate user actions to the ViewModel",
+            fontsize=7.0, style="italic", color=GREY)
+
+    arrow(ax, 5.6, 13.7, 5.6, 12.55, "state ↓   /   events ↑", color=NAVY, fs=7.3)
+
+    # ---- Layer 2: ViewModel ----
+    ax.text(0.45, 12.35, "VIEWMODEL LAYER — StateFlow<UiState>, viewModelScope",
+            fontsize=10.5, weight="bold", color=BLUE)
+    vm = ["DashboardViewModel", "WorkoutViewModel", "LogViewModel",
+          "InsightsViewModel", "ProfileViewModel", "HistoryViewModel"]
+    for i, s in enumerate(vm):
+        box(ax, 0.45 + i * 1.74, 11.45, 1.62, 0.62, s, fc=LIGHT, ec=BLUE, fs=6.1)
+    ax.text(0.45, 11.15, "single source of truth; depends ONLY on a Repository interface (no Retrofit / Room / DAO imports)",
+            fontsize=7.0, style="italic", color=GREY)
+
+    # ---- Composition root strip ----
+    box(ax, 0.45, 10.05, 10.55, 0.78,
+        "COMPOSITION ROOT  —  ServiceLocator (di/ServiceLocator.kt) + VitalIQApp   "
+        "|   manual DI, NO framework: builds RetrofitClient.apiService + AppDatabase once, hands each ViewModel its Repository interface",
+        fc="#FEF9E7", ec=AMBER, fs=6.6)
+    arrow(ax, 5.6, 11.4, 5.6, 10.9, "", color=NAVY)
+
+    # ---- Thread boundary ----
+    ax.plot([0.25, 11.15], [9.72, 9.72], color=RED, lw=1.5, ls=(0, (6, 3)))
+    ax.text(5.7, 9.83, "THREAD BOUNDARY  —  Repository methods switch Main → IO via withContext(Dispatchers.IO)",
+            fontsize=7.6, ha="center", color=RED, weight="bold")
+    arrow(ax, 5.6, 10.0, 5.6, 8.65, "repo.<suspend fun>()", color=NAVY, fs=7.3)
+
+    # ---- Layer 3: Repository ----
+    ax.text(0.45, 8.55, "REPOSITORY LAYER — the SOLE data-access seam (interface + Impl)",
+            fontsize=10.5, weight="bold", color=NAVY)
+    repo = ["DashboardRepository", "WorkoutRepository", "HealthRepository",
+            "InsightsRepository", "ProfileRepository"]
+    for i, s in enumerate(repo):
+        box(ax, 0.45 + i * 2.11, 7.6, 1.98, 0.72, s + "\n(+ Impl)", fc=LIGHT2, ec=NAVY, fs=6.2)
+    ax.text(0.45, 7.28, "withContext(Dispatchers.IO);  network-first, write-through to Room, offline fallback to Room cache",
+            fontsize=7.0, style="italic", color=GREY)
+
+    arrow(ax, 3.3, 7.55, 2.9, 5.15, "suspend HTTP", color=NAVY, fs=7.0)
+    arrow(ax, 7.7, 7.55, 8.6, 5.15, "DAO read / write", color=NAVY, fs=7.0)
+
+    # ---- Layer 4: Data sources ----
+    ax.text(0.45, 5.05, "DATA SOURCES", fontsize=10.5, weight="bold", color=AMBER)
+    box(ax, 0.7, 3.55, 4.7, 1.4,
+        "NETWORK  (system of record)\nRetrofitClient → ApiService (suspend)\nGson → FastAPI + MongoDB backend",
+        fc=LIGHT, ec=BLUE, fs=7.2)
+    box(ax, 6.3, 3.55, 4.7, 1.4,
+        "LOCAL CACHE\nRoom AppDatabase (v2, KSP)\n7 DAOs + 7 entities  →  offline reads",
+        fc=LIGHT2, ec=AMBER, fs=7.2)
+
+    ax.text(5.7, 2.7,
+            "Swapping a data source (e.g. Retrofit → Room) changes only the *RepositoryImpl + one ServiceLocator line — no ViewModel changes.",
+            fontsize=7.4, ha="center", style="italic", color=GREEN)
+    ax.text(5.7, 2.25,
+            "Sensors (accelerometer + step counter) feed WorkoutViewModel state on Main; classification is CPU-light and Default-eligible.",
+            fontsize=7.0, ha="center", style="italic", color=GREY)
+
+    save(fig, name)
+
+
+layered_architecture("arch_layered.png")
 print("ALL DIAGRAMS DONE")
