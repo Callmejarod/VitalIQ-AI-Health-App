@@ -892,7 +892,7 @@ P(doc, "All data-source branching lives inside the Repository \u2014 never in th
 code_block(doc,
 "class VitalIQRepositoryImpl(\n"
 "    private val insightDao: InsightDao,        // Room (local)\n"
-"    private val api: ApiService,               // API (remote)  [added next phase]\n"
+"    private val api: ApiService,               // API (remote)\n"
 "    private val mapper: InsightMapper,\n"
 "    private val io: CoroutineDispatcher = Dispatchers.IO,\n"
 ") : VitalIQRepository {\n\n"

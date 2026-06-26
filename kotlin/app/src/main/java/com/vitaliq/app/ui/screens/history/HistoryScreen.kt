@@ -20,7 +20,6 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.vitaliq.app.ui.components.DualLineChart
 import com.vitaliq.app.ui.components.LineChart
@@ -31,7 +30,7 @@ import com.vitaliq.app.ui.theme.VitalSpacing
 @Composable
 fun HistoryScreen(
     onBack: () -> Unit,
-    viewModel: HistoryViewModel = viewModel(factory = HistoryViewModel.factory(LocalContext.current))
+    viewModel: HistoryViewModel = viewModel(factory = HistoryViewModel.Factory)
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     var selectedTab by remember { mutableIntStateOf(0) }

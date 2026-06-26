@@ -566,7 +566,7 @@ b.table(["Check", "Finding", "Status"],
      ["Compose collects state",
       "Screens collect via collectAsState()/collectAsStateWithLifecycle() and recompose on emission.", "Aligned"],
      ["Repository as the data-source mediator",
-      "Repository contract (\u00a715) hides Room vs API behind domain-typed functions; branching lives in the Repository.", "Aligned (design); API wiring is Phase 2"],
+      "Five repository interfaces + impls hide Room vs API behind domain-typed functions; ViewModels depend only on the interfaces; data-source wiring is centralized in the ServiceLocator composition root.", "Aligned (implemented)"],
      ["Logic NOT in Activity/Composable",
       "MainActivity only hosts the Compose tree + theme; business/state logic resides in ViewModels.", "Aligned"]],
     widths=[2.6, 3.6, 1.4], font=9)
@@ -601,26 +601,27 @@ b.H2("27.4 Audit Verdict")
 b.callout("Verdict: ARCHITECTURALLY LEGITIMATE. Core functionality is integrated; the ViewModel is "
           "the state owner exposing explicit StateFlow; Compose collects and recomposes reactively; "
           "no GlobalScope or runBlocking exists; logic is out of the Activity/Composables; the "
-          "repository layer is well-formed; and state survives rotation. Remaining work (live "
-          "Retrofit calls, full Navigation implementation) is scheduled and does not violate the "
-          "current architecture.")
+          "Repository layer mediates live Retrofit calls and a Room offline cache (ViewModels import "
+          "neither Retrofit nor Room); the full Navigation graph is in place; and state survives "
+          "rotation.")
 b.page_break()
 print("sections 26-27 done")
 
 # ---------------------------------------------------------------------------
 # 28. WHAT REMAINS TO BE DEVELOPED
 # ---------------------------------------------------------------------------
-b.H1("28. What Remains To Be Developed (Feature Backlog)")
-b.P("Compiled list of features to be added during future project phases, with the preparation "
-    "already done now to enable them.")
-b.table(["Feature / Work Item", "Target Phase", "Preparation Done Now"],
-    [["Retrofit client + live ApiService calls", "Phase 2 (next)", "API contract (\u00a716), DTOs, and Repository contract (\u00a715) fully designed."],
-     ["Room entities, DAOs, and CachedInsight cache + migration", "Phase 2", "Entities/DAOs specified (\u00a78.4); write-through caching designed (\u00a715.5)."],
-     ["DTO \u2194 Domain \u2194 Entity mappers", "Phase 2", "Mapping path and rationale documented (\u00a717)."],
-     ["Full Jetpack Navigation implementation", "Phase 3", "NavHost + bottom-nav scaffold in place; back-stack discipline defined (\u00a722.3)."],
-     ["History import (JSON/CSV) end-to-end", "Phase 3", "Import endpoint defined; FR-3 scoped."],
-     ["Charts/analytics polish (trends)", "Phase 3", "History/analytics screens and data series stubs exist (FR-45\u201347)."],
-     ["Medication / nutrition / sleep richer logging UI", "Phase 4", "DTOs + endpoints already specified (\u00a716)."],
+b.H1("28. Implementation Status & Remaining Backlog")
+b.P("The core architectural layers planned in earlier milestones are now implemented. The table "
+    "records the as-built status of each work item; only the items marked Future remain.")
+b.table(["Feature / Work Item", "Status", "Notes"],
+    [["Retrofit client + live ApiService calls", "Implemented", "RetrofitClient + suspend ApiService called only inside the RepositoryImpls."],
+     ["Room entities, DAOs, and offline cache", "Implemented", "AppDatabase v2 with 7 entities/DAOs; repositories write through and fall back to Room when offline."],
+     ["DTO \u2194 Entity mappers", "Implemented", "toDto()/toEntity() mappers on every entity."],
+     ["Composition root (manual DI)", "Implemented", "ServiceLocator builds ApiService + AppDatabase once; ViewModels import neither."],
+     ["Full Jetpack Navigation implementation", "Implemented", "NavHost + bottom nav across 6 destinations; back stack survives rotation."],
+     ["History import (JSON/CSV) end-to-end", "Implemented", "ProfileRepository.importFile (neutral signature) performs the multipart upload."],
+     ["Charts/analytics (trends)", "Partial", "History line/bar charts shipped; deeper trend analytics are future work."],
+     ["Medication / nutrition / sleep logging UI", "Implemented", "Log screen covers all 7 entry types."],
      ["Auth + multi-user / cloud sync", "Future (out of MVP)", "Profile carries user_id; error contract reserves AUTH_ERROR."],
      ["Automated UI tests (Compose/Espresso)", "Future", "Manual test cases documented (\u00a725) ready to automate."]],
     widths=[3.2, 1.6, 2.8], font=9)

@@ -1,18 +1,14 @@
 package com.vitaliq.app.ui.screens.history
 
-import android.content.Context
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
-import com.vitaliq.app.data.api.RetrofitClient
-import com.vitaliq.app.data.local.AppDatabase
 import com.vitaliq.app.data.repository.HealthRepository
-import com.vitaliq.app.data.repository.HealthRepositoryImpl
 import com.vitaliq.app.data.repository.WorkoutRepository
-import com.vitaliq.app.data.repository.WorkoutRepositoryImpl
+import com.vitaliq.app.di.ServiceLocator
 import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -112,12 +108,11 @@ class HistoryViewModel(
     }
 
     companion object {
-        fun factory(context: Context): ViewModelProvider.Factory = viewModelFactory {
+        val Factory: ViewModelProvider.Factory = viewModelFactory {
             initializer {
-                val db = AppDatabase.getInstance(context)
                 HistoryViewModel(
-                    WorkoutRepositoryImpl(RetrofitClient.apiService, db.workoutDao()),
-                    HealthRepositoryImpl(RetrofitClient.apiService, db.healthEntryDao(), db.medicationDao(), db.nutritionDao(), db.sleepDao())
+                    ServiceLocator.workoutRepository,
+                    ServiceLocator.healthRepository
                 )
             }
         }

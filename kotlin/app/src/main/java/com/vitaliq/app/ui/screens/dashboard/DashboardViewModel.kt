@@ -1,18 +1,15 @@
 package com.vitaliq.app.ui.screens.dashboard
 
-import android.content.Context
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
-import com.vitaliq.app.data.api.RetrofitClient
-import com.vitaliq.app.data.local.AppDatabase
 import com.vitaliq.app.data.model.DashboardSummaryDto
 import com.vitaliq.app.data.model.ProfileDto
 import com.vitaliq.app.data.repository.DashboardRepository
-import com.vitaliq.app.data.repository.DashboardRepositoryImpl
+import com.vitaliq.app.di.ServiceLocator
 import kotlinx.coroutines.async
 import kotlinx.coroutines.supervisorScope
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -62,12 +59,11 @@ class DashboardViewModel(
     }
 
     companion object {
-        fun factory(context: Context): ViewModelProvider.Factory = viewModelFactory {
+        // Wiring lives in the composition root (ServiceLocator), not here.
+        // This ViewModel only knows the DashboardRepository interface.
+        val Factory: ViewModelProvider.Factory = viewModelFactory {
             initializer {
-                val db = AppDatabase.getInstance(context)
-                DashboardViewModel(
-                    DashboardRepositoryImpl(RetrofitClient.apiService, db.profileDao())
-                )
+                DashboardViewModel(ServiceLocator.dashboardRepository)
             }
         }
     }

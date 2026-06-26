@@ -3,6 +3,7 @@ import java.util.Properties
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
+    alias(libs.plugins.ksp)
 }
 
 val localProperties = Properties().apply {
@@ -27,13 +28,14 @@ android {
             "\"${localProperties.getProperty("BACKEND_URL", "http://10.0.2.2:8000")}\""
         )
 
-        // Demo/presentation mode: synthesize workout steps + activity so a
-        // workout produces realistic data on an emulator (no real step sensor).
-        // Set SIMULATE_SENSORS=false in local.properties for real devices.
+        // Real hardware sensors (accelerometer + step counter) drive the workout
+        // by default, per the requirement that sensor data not be decorative.
+        // Opt in to demo simulation only on an emulator that lacks a step sensor
+        // by setting SIMULATE_SENSORS=true in local.properties.
         buildConfigField(
             "boolean",
             "SIMULATE_SENSORS",
-            localProperties.getProperty("SIMULATE_SENSORS", "true")
+            localProperties.getProperty("SIMULATE_SENSORS", "false")
         )
     }
 
@@ -75,6 +77,6 @@ dependencies {
     implementation(libs.kotlinx.coroutines.android)
     implementation(libs.androidx.room.runtime)
     implementation(libs.androidx.room.ktx)
-    annotationProcessor(libs.androidx.room.compiler)
+    ksp(libs.androidx.room.compiler)
     debugImplementation(libs.androidx.ui.tooling)
 }

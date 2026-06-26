@@ -1,17 +1,14 @@
 package com.vitaliq.app.ui.screens.insights
 
-import android.content.Context
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
-import com.vitaliq.app.data.api.RetrofitClient
-import com.vitaliq.app.data.local.AppDatabase
 import com.vitaliq.app.data.model.InsightDto
 import com.vitaliq.app.data.repository.InsightsRepository
-import com.vitaliq.app.data.repository.InsightsRepositoryImpl
+import com.vitaliq.app.di.ServiceLocator
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
@@ -68,12 +65,9 @@ class InsightsViewModel(
     }
 
     companion object {
-        fun factory(context: Context): ViewModelProvider.Factory = viewModelFactory {
+        val Factory: ViewModelProvider.Factory = viewModelFactory {
             initializer {
-                val db = AppDatabase.getInstance(context)
-                InsightsViewModel(
-                    InsightsRepositoryImpl(RetrofitClient.apiService, db.insightDao())
-                )
+                InsightsViewModel(ServiceLocator.insightsRepository)
             }
         }
     }

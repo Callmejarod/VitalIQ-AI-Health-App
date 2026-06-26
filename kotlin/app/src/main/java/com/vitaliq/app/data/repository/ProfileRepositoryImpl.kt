@@ -7,8 +7,9 @@ import com.vitaliq.app.data.local.entity.toEntity
 import com.vitaliq.app.data.model.ProfileDto
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.MultipartBody
-import okhttp3.ResponseBody
+import okhttp3.RequestBody.Companion.toRequestBody
 
 class ProfileRepositoryImpl(
     private val api: ApiService,
@@ -31,7 +32,13 @@ class ProfileRepositoryImpl(
         updated
     }
 
-    override suspend fun importFile(part: MultipartBody.Part): ResponseBody = withContext(Dispatchers.IO) {
-        api.importFile(part)
+    override suspend fun importFile(fileName: String, mimeType: String, bytes: ByteArray) {
+        withContext(Dispatchers.IO) {
+            // Transport detail (multipart upload) is constructed here, inside the
+            // repository — callers only ever see neutral file content.
+            val requestBody = bytes.toRequestBody(mimeType.toMediaTypeOrNull())
+            val part = MultipartBody.Part.createFormData("file", fileName, requestBody)
+            api.importFile(part)
+        }
     }
 }

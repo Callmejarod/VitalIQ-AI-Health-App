@@ -23,7 +23,6 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.vitaliq.app.ui.components.PrimaryButton
 import com.vitaliq.app.ui.theme.VitalColors
@@ -32,7 +31,7 @@ import kotlinx.coroutines.launch
 
 @Composable
 fun LogScreen(
-    viewModel: LogViewModel = viewModel(factory = LogViewModel.factory(LocalContext.current))
+    viewModel: LogViewModel = viewModel(factory = LogViewModel.Factory)
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }

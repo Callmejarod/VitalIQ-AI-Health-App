@@ -1,7 +1,15 @@
 # VitalIQ — Product Requirements
 
+> **⚠️ Superseded / legacy spec.** This PRD describes the original Expo (React
+> Native) prototype and its Claude-based backend. The submitted project is a
+> **native Android (Kotlin + Jetpack Compose)** client following MVVM →
+> Repository → Room/Retrofit, with insights served by the FastAPI backend. For
+> the authoritative as-built architecture see `kotlin/README.md` and the Final
+> Report (`documents/build_final_report.py`). This file is retained only as the
+> historical product concept.
+
 ## Overview
-A personal health & fitness intelligence Expo (React Native + TypeScript) app that combines device sensor tracking, manual biometric logging, and AI-generated health insights.
+A personal health & fitness intelligence app that combines device sensor tracking, manual biometric logging, and AI-generated health insights. (Original prototype: Expo / React Native + TypeScript; the shipped client is native Kotlin/Jetpack Compose.)
 
 ## Architecture
 - **Frontend**: Expo Router (5 tabs + History modal), TypeScript, react-native-svg charts/rings, expo-sensors (Accelerometer + Pedometer)

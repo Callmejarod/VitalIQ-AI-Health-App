@@ -8,19 +8,14 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
-import com.vitaliq.app.data.api.RetrofitClient
-import com.vitaliq.app.data.local.AppDatabase
 import com.vitaliq.app.data.model.ProfileDto
 import com.vitaliq.app.data.repository.ProfileRepository
-import com.vitaliq.app.data.repository.ProfileRepositoryImpl
+import com.vitaliq.app.di.ServiceLocator
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import okhttp3.MediaType.Companion.toMediaTypeOrNull
-import okhttp3.MultipartBody
-import okhttp3.RequestBody.Companion.toRequestBody
 
 sealed class ProfileUiState {
     object Loading : ProfileUiState()
@@ -74,17 +69,17 @@ class ProfileViewModel(
         viewModelScope.launch {
             _uiState.value = current.copy(importing = true)
             try {
-                withContext(Dispatchers.IO) {
+                // Reading the file (an Android content concern) happens off the main
+                // thread here; the repository handles how the bytes are transmitted.
+                val (fileName, mimeType, bytes) = withContext(Dispatchers.IO) {
                     val inputStream = context.contentResolver.openInputStream(uri)
                         ?: throw Exception("Cannot open file")
-                    val bytes = inputStream.readBytes()
-                    inputStream.close()
-                    val mimeType = context.contentResolver.getType(uri) ?: "application/octet-stream"
-                    val fileName = uri.lastPathSegment ?: "import.json"
-                    val requestBody = bytes.toRequestBody(mimeType.toMediaTypeOrNull())
-                    val part = MultipartBody.Part.createFormData("file", fileName, requestBody)
-                    repo.importFile(part)
+                    val data = inputStream.use { it.readBytes() }
+                    val mime = context.contentResolver.getType(uri) ?: "application/octet-stream"
+                    val name = uri.lastPathSegment ?: "import.json"
+                    Triple(name, mime, data)
                 }
+                repo.importFile(fileName, mimeType, bytes)
                 _uiState.value = current.copy(importing = false, snackbarMessage = "Data imported successfully!")
             } catch (e: Exception) {
                 _uiState.value = current.copy(importing = false, snackbarMessage = "Import failed: ${e.message}")
@@ -103,12 +98,11 @@ class ProfileViewModel(
     }
 
     companion object {
-        fun factory(context: Context): ViewModelProvider.Factory = viewModelFactory {
+        // Context here is used only for content-resolver file reads in importFile,
+        // never for data access — that goes through ProfileRepository.
+        val Factory: ViewModelProvider.Factory = viewModelFactory {
             initializer {
-                val db = AppDatabase.getInstance(context)
-                ProfileViewModel(
-                    ProfileRepositoryImpl(RetrofitClient.apiService, db.profileDao())
-                )
+                ProfileViewModel(ServiceLocator.profileRepository)
             }
         }
     }

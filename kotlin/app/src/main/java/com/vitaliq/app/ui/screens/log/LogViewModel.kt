@@ -1,20 +1,17 @@
 package com.vitaliq.app.ui.screens.log
 
-import android.content.Context
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
-import com.vitaliq.app.data.api.RetrofitClient
-import com.vitaliq.app.data.local.AppDatabase
 import com.vitaliq.app.data.model.HealthEntryDto
 import com.vitaliq.app.data.model.MedicationDto
 import com.vitaliq.app.data.model.NutritionDto
 import com.vitaliq.app.data.model.SleepDto
 import com.vitaliq.app.data.repository.HealthRepository
-import com.vitaliq.app.data.repository.HealthRepositoryImpl
+import com.vitaliq.app.di.ServiceLocator
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
@@ -126,12 +123,9 @@ class LogViewModel(
     }
 
     companion object {
-        fun factory(context: Context): ViewModelProvider.Factory = viewModelFactory {
+        val Factory: ViewModelProvider.Factory = viewModelFactory {
             initializer {
-                val db = AppDatabase.getInstance(context)
-                LogViewModel(
-                    HealthRepositoryImpl(RetrofitClient.apiService, db.healthEntryDao(), db.medicationDao(), db.nutritionDao(), db.sleepDao())
-                )
+                LogViewModel(ServiceLocator.healthRepository)
             }
         }
     }

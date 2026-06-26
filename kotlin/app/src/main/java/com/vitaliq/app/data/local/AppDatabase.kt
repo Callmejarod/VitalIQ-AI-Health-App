@@ -49,7 +49,7 @@ abstract class AppDatabase : RoomDatabase() {
                 context.applicationContext,
                 AppDatabase::class.java,
                 "vitaliq.db"
-            ).fallbackToDestructiveMigration().build().also { INSTANCE = it }
+            ).fallbackToDestructiveMigration(dropAllTables = true).build().also { INSTANCE = it }
         }
     }
 }

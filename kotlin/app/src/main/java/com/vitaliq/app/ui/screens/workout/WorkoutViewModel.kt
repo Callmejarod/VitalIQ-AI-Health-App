@@ -12,11 +12,9 @@ import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import com.vitaliq.app.BuildConfig
-import com.vitaliq.app.data.api.RetrofitClient
-import com.vitaliq.app.data.local.AppDatabase
 import com.vitaliq.app.data.model.WorkoutDto
 import com.vitaliq.app.data.repository.WorkoutRepository
-import com.vitaliq.app.data.repository.WorkoutRepositoryImpl
+import com.vitaliq.app.di.ServiceLocator
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -225,12 +223,11 @@ class WorkoutViewModel(
     }
 
     companion object {
-        fun factory(context: Context): ViewModelProvider.Factory = viewModelFactory {
+        // Data wiring is in ServiceLocator; the Context this ViewModel uses is
+        // only for SensorManager (passed to startWorkout), never for data access.
+        val Factory: ViewModelProvider.Factory = viewModelFactory {
             initializer {
-                val db = AppDatabase.getInstance(context)
-                WorkoutViewModel(
-                    WorkoutRepositoryImpl(RetrofitClient.apiService, db.workoutDao())
-                )
+                WorkoutViewModel(ServiceLocator.workoutRepository)
             }
         }
     }

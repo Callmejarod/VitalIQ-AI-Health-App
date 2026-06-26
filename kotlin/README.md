@@ -8,11 +8,11 @@ A full native Android rewrite of the VitalIQ health tracking app, built with **K
 
 | Tool | Version |
 |---|---|
-| Android Studio | Hedgehog (2023.1.1) or newer |
+| Android Studio | Version supporting AGP 9.2 (built-in Kotlin) |
 | JDK | 17+ |
-| Android SDK | API 26 min / API 35 target |
-| Kotlin | 2.0.0 |
-| Gradle | 8.5+ (via wrapper) |
+| Android SDK | API 26 min / API 36 target |
+| Kotlin | 2.1.20 |
+| Gradle | 9.4.1 (via wrapper) |
 
 ---
 
@@ -53,16 +53,34 @@ In Android Studio: **File → Sync Project with Gradle Files** (or click the ele
 
 ---
 
+## Architecture
+
+VitalIQ is layered **UI → ViewModel → Repository → (Retrofit network | Room cache)**:
+
+- **UI (Compose)** renders purely from `StateFlow`, collected with `collectAsStateWithLifecycle()`.
+- **ViewModel** owns UI state (`StateFlow`), runs work in `viewModelScope`, and depends **only on a repository interface** — it never references Retrofit, Room, a DAO, or `AppDatabase`.
+- **Repository** is the sole data-access seam. Each `*RepositoryImpl` calls the API on `Dispatchers.IO`, writes results through to Room, and falls back to the Room cache when offline.
+- **Composition root** — `di/ServiceLocator.kt` (a plain-Kotlin object, **no DI framework**) builds `RetrofitClient.apiService` + `AppDatabase` once and hands each ViewModel its repository interface. Swapping Retrofit for Room changes only a `RepositoryImpl` and one wiring line — never a ViewModel.
+
 ## Project Structure
 
 ```
 app/src/main/java/com/vitaliq/app/
 ├── data/
 │   ├── api/
-│   │   ├── ApiService.kt          Retrofit interface (all 17 endpoints)
+│   │   ├── ApiService.kt          Retrofit interface (suspend endpoints)
 │   │   └── RetrofitClient.kt      Singleton Retrofit instance
+│   ├── local/                     Room persistence (offline cache)
+│   │   ├── AppDatabase.kt         Room database (version 2)
+│   │   ├── dao/                   7 DAOs (workout, health, profile, insight, ...)
+│   │   └── entity/                7 entities + toDto()/toEntity() mappers
+│   ├── repository/                Repository layer — the SOLE data-access seam
+│   │   ├── *Repository.kt         5 interfaces (ViewModels depend on these)
+│   │   └── *RepositoryImpl.kt     5 impls (Retrofit + Room, Dispatchers.IO)
 │   └── model/
 │       └── Models.kt              All DTO data classes
+├── di/
+│   └── ServiceLocator.kt          Manual composition root (no DI framework)
 ├── ui/
 │   ├── components/
 │   │   ├── HealthRing.kt          Circular progress arc (Canvas)
@@ -73,7 +91,7 @@ app/src/main/java/com/vitaliq/app/
 │   ├── theme/
 │   │   ├── VitalTheme.kt          Colors, spacing, radius constants + MaterialTheme
 │   │   └── Type.kt                Typography scale
-│   └── screens/
+│   └── screens/                   each: Screen + ViewModel (VM → repository interface)
 │       ├── dashboard/             DashboardScreen + DashboardViewModel
 │       ├── workout/               WorkoutScreen + WorkoutViewModel (SensorManager)
 │       ├── log/                   LogScreen + LogViewModel (7 entry types)
@@ -82,7 +100,8 @@ app/src/main/java/com/vitaliq/app/
 │       └── history/               HistoryScreen + HistoryViewModel (charts)
 ├── navigation/
 │   └── AppNavigation.kt           NavHost + BottomNavigationBar
-└── MainActivity.kt
+├── VitalIQApp.kt                  Application — initializes ServiceLocator
+└── MainActivity.kt                Hosts Compose tree + lifecycle logging (tag "VitalIQ")
 ```
 
 ---

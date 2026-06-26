@@ -8,6 +8,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.DirectionsWalk
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
@@ -23,7 +24,6 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.repeatOnLifecycle
-import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.vitaliq.app.ui.components.HealthRing
 import com.vitaliq.app.ui.components.SectionHeader
@@ -39,7 +39,7 @@ fun DashboardScreen(
     onNavigateToInsights: () -> Unit,
     onNavigateToProfile: () -> Unit,
     onNavigateToHistory: () -> Unit,
-    viewModel: DashboardViewModel = viewModel(factory = DashboardViewModel.factory(LocalContext.current))
+    viewModel: DashboardViewModel = viewModel(factory = DashboardViewModel.Factory)
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val lifecycleOwner = LocalLifecycleOwner.current
@@ -190,7 +190,7 @@ fun DashboardScreen(
 
                     val columns = 2
                     val stats = listOf(
-                        Triple(Icons.Default.DirectionsWalk, "Steps", "${summary.stepsToday}"),
+                        Triple(Icons.AutoMirrored.Filled.DirectionsWalk, "Steps", "${summary.stepsToday}"),
                         Triple(Icons.Default.WaterDrop, "Water", "${summary.waterMlToday} ml"),
                         Triple(Icons.Default.Bedtime, "Sleep", "${summary.lastSleepHours ?: "--"} hrs"),
                         Triple(Icons.Default.Favorite, "Heart Rate", "${summary.lastHr ?: "--"} bpm"),
