@@ -45,7 +45,7 @@ object ServiceLocator {
 
     // --- Repositories, exposed only as interfaces ---
     val dashboardRepository: DashboardRepository by lazy {
-        DashboardRepositoryImpl(api, database.profileDao())
+        DashboardRepositoryImpl(api, database.profileDao(), database.dashboardSummaryDao())
     }
 
     val workoutRepository: WorkoutRepository by lazy {

@@ -59,7 +59,7 @@ VitalIQ is layered **UI → ViewModel → Repository → (Retrofit network | Roo
 
 - **UI (Compose)** renders purely from `StateFlow`, collected with `collectAsStateWithLifecycle()`.
 - **ViewModel** owns UI state (`StateFlow`), runs work in `viewModelScope`, and depends **only on a repository interface** — it never references Retrofit, Room, a DAO, or `AppDatabase`.
-- **Repository** is the sole data-access seam. Each `*RepositoryImpl` calls the API on `Dispatchers.IO`, writes results through to Room, and falls back to the Room cache when offline.
+- **Repository** is the sole data-access seam. Each `*RepositoryImpl` calls the API on `Dispatchers.IO`, writes results through to Room, and falls back to the Room cache when offline. Read operations (list/get) all have a Room fallback; write operations (create/update) propagate network errors to the ViewModel, which renders a visible error state.
 - **Composition root** — `di/ServiceLocator.kt` (a plain-Kotlin object, **no DI framework**) builds `RetrofitClient.apiService` + `AppDatabase` once and hands each ViewModel its repository interface. Swapping Retrofit for Room changes only a `RepositoryImpl` and one wiring line — never a ViewModel.
 
 ## Project Structure

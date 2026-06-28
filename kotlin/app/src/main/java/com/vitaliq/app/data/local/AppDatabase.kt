@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
+import com.vitaliq.app.data.local.dao.DashboardSummaryDao
 import com.vitaliq.app.data.local.dao.HealthEntryDao
 import com.vitaliq.app.data.local.dao.InsightDao
 import com.vitaliq.app.data.local.dao.MedicationDao
@@ -11,6 +12,7 @@ import com.vitaliq.app.data.local.dao.NutritionDao
 import com.vitaliq.app.data.local.dao.ProfileDao
 import com.vitaliq.app.data.local.dao.SleepDao
 import com.vitaliq.app.data.local.dao.WorkoutDao
+import com.vitaliq.app.data.local.entity.DashboardSummaryEntity
 import com.vitaliq.app.data.local.entity.HealthEntryEntity
 import com.vitaliq.app.data.local.entity.InsightEntity
 import com.vitaliq.app.data.local.entity.MedicationEntity
@@ -27,9 +29,10 @@ import com.vitaliq.app.data.local.entity.WorkoutEntity
         InsightEntity::class,
         MedicationEntity::class,
         NutritionEntity::class,
-        SleepEntity::class
+        SleepEntity::class,
+        DashboardSummaryEntity::class
     ],
-    version = 2,
+    version = 3,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -40,6 +43,7 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun medicationDao(): MedicationDao
     abstract fun nutritionDao(): NutritionDao
     abstract fun sleepDao(): SleepDao
+    abstract fun dashboardSummaryDao(): DashboardSummaryDao
 
     companion object {
         @Volatile private var INSTANCE: AppDatabase? = null
